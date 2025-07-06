@@ -1,18 +1,25 @@
-import { Hono } from 'hono'
-import { handle } from 'hono/vercel'
+import { NextRequest, NextResponse } from 'next/server'
 
-const app = new Hono()
-
-app.get('/', async (c) => {
+export async function GET(request: NextRequest) {
   try {
     const response = await fetch('https://www.jma.go.jp/bosai/amedas/data/latest_time.txt')
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
     const latestTime = await response.text()
-    return c.json({ latestTime: latestTime.trim() })
+    
+    if (!latestTime.trim()) {
+      throw new Error('Empty response from JMA API')
+    }
+    
+    return NextResponse.json({ latestTime: latestTime.trim() })
   } catch (error) {
     console.error('Error fetching latest time:', error)
-    return c.json({ error: 'Failed to fetch latest time' }, 500)
+    return NextResponse.json(
+      { error: 'Failed to fetch latest time', details: error instanceof Error ? error.message : 'Unknown error' }, 
+      { status: 500 }
+    )
   }
-})
-
-export const GET = handle(app)
-export const POST = handle(app)
+}

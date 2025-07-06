@@ -1,11 +1,11 @@
-import { Hono } from 'hono'
-import { handle } from 'hono/vercel'
+import { NextRequest, NextResponse } from 'next/server'
 
-const app = new Hono()
-
-app.get('/', async (c) => {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { timestamp: string } }
+) {
   try {
-    const { timestamp } = c.req.param()
+    const { timestamp } = params
     const response = await fetch(`https://www.jma.go.jp/bosai/amedas/data/map/${timestamp}00.json`)
     
     if (!response.ok) {
@@ -28,12 +28,12 @@ app.get('/', async (c) => {
       throw new Error('Invalid JSON response from JMA API')
     }
     
-    return c.json(data)
+    return NextResponse.json(data)
   } catch (error) {
     console.error('Error fetching AMeDAS data:', error)
-    return c.json({ error: 'Failed to fetch AMeDAS data', details: error.message }, 500)
+    return NextResponse.json(
+      { error: 'Failed to fetch AMeDAS data', details: error instanceof Error ? error.message : 'Unknown error' }, 
+      { status: 500 }
+    )
   }
-})
-
-export const GET = handle(app)
-export const POST = handle(app)
+}

@@ -1,18 +1,20 @@
-import { Hono } from 'hono'
-import { handle } from 'hono/vercel'
+import { NextRequest, NextResponse } from 'next/server'
 
-const app = new Hono()
-
-app.get('/', async (c) => {
+export async function GET(request: NextRequest) {
   try {
     const response = await fetch('https://www.jma.go.jp/bosai/amedas/const/amedastable.json')
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
     const data = await response.json()
-    return c.json(data)
+    return NextResponse.json(data)
   } catch (error) {
     console.error('Error fetching stations:', error)
-    return c.json({ error: 'Failed to fetch stations' }, 500)
+    return NextResponse.json(
+      { error: 'Failed to fetch stations', details: error instanceof Error ? error.message : 'Unknown error' }, 
+      { status: 500 }
+    )
   }
-})
-
-export const GET = handle(app)
-export const POST = handle(app)
+}
