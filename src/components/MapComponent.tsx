@@ -12,6 +12,7 @@ interface MapComponentProps {
 const MapComponent: React.FC<MapComponentProps> = ({ selectedAirport, onAirportSelect }) => {
   const [mapInstance, setMapInstance] = useState<any>(null)
   const [isClient, setIsClient] = useState(false)
+  const [mapId] = useState(() => `map-${Math.random().toString(36).substr(2, 9)}`)
   const airports = airportsData as Airport[]
 
   useEffect(() => {
@@ -34,10 +35,16 @@ const MapComponent: React.FC<MapComponentProps> = ({ selectedAirport, onAirportS
         })
 
         // Create map container
-        const mapContainer = document.getElementById('map-container')
+        const mapContainer = document.getElementById(mapId)
         if (!mapContainer) return
 
-        // Remove any existing map
+        // Check if map is already initialized
+        if (mapInstance) {
+          mapInstance.remove()
+          setMapInstance(null)
+        }
+
+        // Clear container
         mapContainer.innerHTML = ''
 
         // Create new map
@@ -74,8 +81,21 @@ const MapComponent: React.FC<MapComponentProps> = ({ selectedAirport, onAirportS
     }
 
     const timer = setTimeout(initMap, 100)
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      if (mapInstance) {
+        mapInstance.remove()
+      }
+    }
   }, [isClient, onAirportSelect])
+
+  useEffect(() => {
+    return () => {
+      if (mapInstance) {
+        mapInstance.remove()
+      }
+    }
+  }, [])
 
   if (!isClient) {
     return (
@@ -87,7 +107,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ selectedAirport, onAirportS
 
   return (
     <div 
-      id="map-container"
+      id={mapId}
       className="w-full h-full rounded-lg"
       style={{ minHeight: '300px' }}
     />

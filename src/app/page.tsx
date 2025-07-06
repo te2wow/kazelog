@@ -26,18 +26,49 @@ export default function Home() {
     try {
       // Get latest time
       const latestTimeResponse = await fetch('/api/weather')
-      const { latestTime } = await latestTimeResponse.json()
+      
+      if (!latestTimeResponse.ok) {
+        throw new Error(`Failed to fetch latest time: ${latestTimeResponse.status}`)
+      }
+      
+      const latestTimeData = await latestTimeResponse.json()
+      
+      if (latestTimeData.error) {
+        throw new Error(latestTimeData.error)
+      }
+      
+      const { latestTime } = latestTimeData
+      
+      if (!latestTime) {
+        throw new Error('Latest time not available')
+      }
       
       // Get weather data
       const weatherResponse = await fetch(`/api/weather/amedas/${latestTime}`)
-      const amedasData: AmedasData = await weatherResponse.json()
+      
+      if (!weatherResponse.ok) {
+        throw new Error(`Failed to fetch weather data: ${weatherResponse.status}`)
+      }
+      
+      const weatherResponseData = await weatherResponse.json()
+      
+      if (weatherResponseData.error) {
+        throw new Error(weatherResponseData.error)
+      }
+      
+      const amedasData: AmedasData = weatherResponseData
       
       // Get weather data for the selected airport's station
       const stationData = amedasData[airport.amedasStation]
       setWeatherData(stationData || null)
       
+      if (!stationData) {
+        setError(`${airport.name}の観測データが利用できません`)
+      }
+      
     } catch (err) {
-      setError('天気データの取得に失敗しました')
+      const errorMessage = err instanceof Error ? err.message : '天気データの取得に失敗しました'
+      setError(errorMessage)
       console.error('Error fetching weather data:', err)
     } finally {
       setLoading(false)
