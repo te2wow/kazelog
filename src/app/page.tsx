@@ -25,7 +25,7 @@ export default function Home() {
     
     try {
       // Get latest time
-      const latestTimeResponse = await fetch('/api/weather/latest-time')
+      const latestTimeResponse = await fetch('/api/weather')
       const { latestTime } = await latestTimeResponse.json()
       
       // Get weather data
