@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Airport } from '@/types/airport'
 import airportsData from '@/data/airports.json'
 
@@ -12,7 +12,8 @@ interface MapComponentProps {
 const MapComponent: React.FC<MapComponentProps> = ({ selectedAirport, onAirportSelect }) => {
   const [mapInstance, setMapInstance] = useState<any>(null)
   const [isClient, setIsClient] = useState(false)
-  const [mapId] = useState(() => `map-${Math.random().toString(36).substr(2, 9)}`)
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const [mapId] = useState(() => `map-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
   const airports = airportsData as Airport[]
 
   useEffect(() => {
@@ -20,35 +21,48 @@ const MapComponent: React.FC<MapComponentProps> = ({ selectedAirport, onAirportS
   }, [])
 
   useEffect(() => {
-    if (!isClient) return
+    if (!isClient || !mapContainerRef.current) return
+
+    let map: any = null
 
     const initMap = async () => {
       try {
         const L = (await import('leaflet')).default
         
+        // Clean up previous instance if exists
+        if (mapInstance) {
+          try {
+            mapInstance.remove()
+          } catch (error) {
+            console.warn('Error removing previous map instance:', error)
+          }
+          setMapInstance(null)
+        }
+
         // Fix for default markers not showing in Next.js
-        delete (L.Icon.Default.prototype as any)._getIconUrl
+        if (L.Icon.Default.prototype._getIconUrl) {
+          delete (L.Icon.Default.prototype as any)._getIconUrl
+        }
         L.Icon.Default.mergeOptions({
           iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
           iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         })
 
-        // Create map container
-        const mapContainer = document.getElementById(mapId)
+        // Get map container
+        const mapContainer = mapContainerRef.current
         if (!mapContainer) return
 
-        // Check if map is already initialized
-        if (mapInstance) {
-          mapInstance.remove()
-          setMapInstance(null)
-        }
-
-        // Clear container
+        // Clear any existing content
         mapContainer.innerHTML = ''
 
-        // Create new map
-        const map = L.map(mapContainer).setView([36.2048, 138.2529], 5)
+        // Create new map instance
+        map = L.map(mapContainer, {
+          center: [36.2048, 138.2529],
+          zoom: 5,
+          zoomControl: true,
+          scrollWheelZoom: true
+        })
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -81,21 +95,31 @@ const MapComponent: React.FC<MapComponentProps> = ({ selectedAirport, onAirportS
     }
 
     const timer = setTimeout(initMap, 100)
+    
     return () => {
       clearTimeout(timer)
-      if (mapInstance) {
-        mapInstance.remove()
+      if (map) {
+        try {
+          map.remove()
+        } catch (error) {
+          console.warn('Error cleaning up map on unmount:', error)
+        }
       }
     }
-  }, [isClient, onAirportSelect])
+  }, [isClient])
 
+  // Cleanup on component unmount
   useEffect(() => {
     return () => {
       if (mapInstance) {
-        mapInstance.remove()
+        try {
+          mapInstance.remove()
+        } catch (error) {
+          console.warn('Error cleaning up map instance:', error)
+        }
       }
     }
-  }, [])
+  }, [mapInstance])
 
   if (!isClient) {
     return (
@@ -107,7 +131,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ selectedAirport, onAirportS
 
   return (
     <div 
-      id={mapId}
+      ref={mapContainerRef}
       className="w-full h-full rounded-lg"
       style={{ minHeight: '300px' }}
     />
