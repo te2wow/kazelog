@@ -61,30 +61,32 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Kazelog</h1>
-          <p className="text-gray-600">空港の風向き・風速情報</p>
+        <header className="text-center mb-6 md:mb-8">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-2">Kazelog</h1>
+          <p className="text-sm md:text-base text-gray-600">空港の風向き・風速情報</p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
           {/* Map Section */}
           <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-800">日本の空港</h2>
-            <MapComponent
-              selectedAirport={selectedAirport}
-              onAirportSelect={handleAirportSelect}
-            />
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-800">日本の空港</h2>
+            <div className="h-64 md:h-96 lg:h-[400px]">
+              <MapComponent
+                selectedAirport={selectedAirport}
+                onAirportSelect={handleAirportSelect}
+              />
+            </div>
           </div>
 
           {/* Weather Info Section */}
           <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-800">気象情報</h2>
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-800">気象情報</h2>
             
             {selectedAirport && (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-4">
-                <h3 className="text-xl font-semibold mb-2">{selectedAirport.name}</h3>
-                <p className="text-gray-600 mb-1">{selectedAirport.nameEn}</p>
-                <p className="text-sm text-gray-500">
+              <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-4">
+                <h3 className="text-lg md:text-xl font-semibold mb-2">{selectedAirport.name}</h3>
+                <p className="text-sm md:text-base text-gray-600 mb-1">{selectedAirport.nameEn}</p>
+                <p className="text-xs md:text-sm text-gray-500">
                   {selectedAirport.iataCode} / {selectedAirport.icaoCode}
                 </p>
               </div>
